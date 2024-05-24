@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "xmutil"
+name = "xmextras"
 version = "0.1.0"
 description = "Extra utility functions for X-Midas."
 authors = ["Spectric Labs <foss@spectric.com>"]
@@ -35,6 +35,6 @@ deps =
 	flake8
 	pylint
 commands =
-	flake8 --select E201,E202,E231,E262,E265 xmutil
-	pylint xmutil
+	flake8 --select E201,E202,E231,E262,E265 xmextras
+	pylint xmextras
 """
