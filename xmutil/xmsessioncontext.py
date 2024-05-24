@@ -1,11 +1,6 @@
 from contextlib import contextmanager
 
-import os
-import sys
-
-sys.path.append(os.path.join(os.environ['XMDISK'], 'xm', 'pylib'))
-
-from xmstart import XMSession
+from xmstart import XMSession  # pylint: disable=import-error
 
 @contextmanager
 def XMSessionContext():

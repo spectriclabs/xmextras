@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "xmutil"
+version = "0.1.0"
+description = "Extra utility functions for X-Midas."
+authors = ["Spectric Labs <foss@spectric.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 150
+disable = "too-many-nested-blocks,too-many-branches,too-many-statements,R0801,R0902,R0903,R0911,R0913,R0914,C0103,C0114,C0115,C0116,C0123,C0301,C0302,fixme"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py311
+isolated_build = true
+recreate = true
+
+[gh-actions]
+python =
+	3.10: py310
+	3.11: py311
+
+[testenv]
+deps =
+	flake8
+	pylint
+commands =
+	flake8 --select E201,E202,E231,E262,E265 xmutil
+	pylint xmutil
+"""
