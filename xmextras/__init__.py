@@ -1,18 +1,18 @@
-# pylint: disable=wrong-import-position
+# pylint: disable=wrong-import-order
 
-import os
-import sys
-
-XM_PATH = os.path.join(os.environ['XMDISK'], 'xm', 'pylib')
-
-if XM_PATH not in sys.path:
-    sys.path.append(XM_PATH)
-
-import bluefile  # pylint: disable=import-error
-
-from .dates import (
-    j1950_to_epoch,
+from .noxm import (
+    datetime_to_j1950,
     epoch_to_j1950,
+    j1950_to_datetime,
+    j1950_to_epoch,
 )
-from .info import xm_info
-from .xmsessioncontext import XMSessionContext
+
+try:
+    from .xm import (
+        XMSessionContext,
+        xm_info,
+    )
+
+    import bluefile  # pylint: disable=import-error
+except ImportError:
+    pass
