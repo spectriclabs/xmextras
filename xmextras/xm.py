@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import os
 import sys
 
-# Only defines this functionality if possible
+# Only define this functionality if possible
 if 'XMDISK' in os.environ:
     XM_PATH = os.path.join(os.environ['XMDISK'], 'xm', 'pylib')
 
@@ -36,7 +36,7 @@ if 'XMDISK' in os.environ:
             finally:
                 session.end()
 
-        def xm_info(session):
+        def info(session):
             '''
             Returns basic info about an X-Midas instance, which can be useful
             for tagging metrics and comparison benchmarks.
@@ -47,7 +47,7 @@ if 'XMDISK' in os.environ:
             Example::
 
                 with XMSessionContext() as session:
-                    info = xm_info(session)
+                    info = info(session)
             '''
             key_mappings = {
                 'version': 'XM_VERSION_CODE',
