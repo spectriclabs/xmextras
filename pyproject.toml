@@ -3,6 +3,7 @@ name = "xmextras"
 version = "0.1.0"
 description = "Extra utility functions for X-Midas."
 authors = ["Spectric Labs <foss@spectric.com>"]
+homepage = "https://github.com/spectriclabs/xmextras"
 license = "Apache-2.0"
 readme = "README.md"
 
