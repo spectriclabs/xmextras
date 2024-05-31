@@ -26,7 +26,12 @@ if 'XMDISK' in os.environ:
 
                 with XMSessionContext() as session:
                     session.xm('res answer 42')
-                    ...
+
+                    # or
+                    from pymidas.xmidas import xm
+                    xm.res('answer', 42)
+
+                    answer = session.xmpy.res['answer']
             '''
             session = XMSession()
             session.start()

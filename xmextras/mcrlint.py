@@ -72,20 +72,18 @@ def check_file(path: Path, disable=None):
         raise ValueError("Expected list of disabled plugin ID's or None")
 
     plugins = [plugin for plugin in PLUGINS if plugin.id not in disable]
-    issues = []
 
     with path.open('r', encoding='utf8') as f:
         for line_num, line in enumerate(f):
             line_issues = check_line(line, plugins)
 
             for issue in line_issues:
-                issues.append(Issue(path, line_num+1, issue))
-
-    return issues
+                yield Issue(path, line_num+1, issue)
 
 
 def mcrlint():
     paths = [Path(p) for p in sys.argv[1:]]
+    issue_count = 0
 
     for path in paths:
         if not path.exists():
@@ -94,3 +92,9 @@ def mcrlint():
 
         for issue in check_file(path):
             print(issue)
+            issue_count += 1
+
+    print(f'Found {issue_count} issues')
+
+    if issue_count > 0:
+        sys.exit(1)

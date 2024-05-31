@@ -11,7 +11,12 @@ import xmextas as xmx
 
 with xmx.XMSessionContext() as session:
     session.xm('res answer 42')
-		...
+
+    # or
+    from pymidas.xmidas import xm
+    xm.res('answer', 42)
+
+    answer = session.xmpy.res['answer']
 ```
 
 ## info
