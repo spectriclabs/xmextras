@@ -15,6 +15,7 @@ if 'XMDISK' in os.environ:
 
 
         from xmstart import XMSession  # pylint: disable=import-error
+        import bluefile  # pylint: disable=import-error, unused-import
 
         @contextmanager
         def XMSessionContext():

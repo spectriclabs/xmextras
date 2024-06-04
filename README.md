@@ -49,3 +49,12 @@ e = j1950_to_epoch(2191001400.0)
 ```python
 j = epoch_to_to_j1950(1559849400.0)
 ```
+
+## bluefile
+
+xmextras locates the system installation of bluefile.py so it can be imported outside of an X-Midas environment.
+
+```python
+from xmextras import bluefile
+header = bluefile.readheader('some_bluefile.tmp')
+```

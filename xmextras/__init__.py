@@ -9,10 +9,10 @@ from .noxm import (
 
 try:
     from .xm import (
+        bluefile,
         XMSessionContext,
         info,
     )
 
-    import bluefile  # pylint: disable=import-error
 except ImportError:
     pass
