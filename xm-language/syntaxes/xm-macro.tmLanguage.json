@@ -1,0 +1,116 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "xmidas",
+	"patterns": [
+		
+		{
+			"include": "#functions"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#variables"
+		},
+		  {
+			"begin": "!",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.comment.xm-macro"
+				}
+			},
+			"end": "\\n",
+			"name": "comment.line.xm-macro"
+		}
+		
+	],
+	"repository": {
+		"numbers":{   
+			"patterns":[{
+				"match": "\\b(0x\\h*)",
+				"name": "constant.numeric.integer.long.hexadecimal.xm-macro"
+			},{
+				"match": "\\b([1-9]+[0-9]*|0)\\b",
+				"name": "constant.numeric.integer.decimal.xm-macro"
+			}]
+		},
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.xm-macro",
+				"match": "\\b(?i)(return|invoke|elseif|endfor|foreach|if|else|while|else|endif|while|end|endwhile|loop|endloop|local|then|startmacro|endmacro|do|FORALL|break|continue|enddo)\\b"
+			},
+			{
+				"name":"keyword.logical.xm-macro",
+				"match": "\\b(?i)(eq|eqs|subs|nsubs|eqss|neqss|and|nrexists|neqs|nfexists|rexists|fexists|lt|le|or|gt|ne|neq|ge|isFalse|contains|inlist)\\b"
+			},
+			{
+				"match": "\\b(NONE|MAG|PHASE|REAL|IMAG|10LOG|20LOG|BAND|16T)\\b",
+				"name": "constant.character"
+			},
+			{
+				"match": "\\b(intable)\\b",
+				"comment": "for key intable sets",
+				"name":"keyword.operator.expression.intable.xm-macro"
+			}
+		]
+		},
+		"strings": {
+			"name": "string.quoted.double.xm-macro",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.xm-macro",
+					"match": "\\\\."
+				},		
+				{
+					"include": "#variables"
+				}
+			]
+		},
+
+		"variables":{
+			"patterns": [{
+				"match": "\\^(\\w+)\\b",
+				"name": "variable.parameter.xm-macro"
+			  },{
+				"captures": {
+					"1":{
+						"name":"support.type.primitive.xm-macro"
+					},
+					"2":{
+						"name":"variable.other.write.xm-macro"
+					}
+				},
+				"match": "\\b(\\w+):(\\w+)\\b"
+			  }]
+		},
+		"functions":{
+			"patterns": [{
+				"name":"entity.name.function",
+				"match": "^\\s*?(?!(?i)procedure|return|invoke|elseif|endfor|foreach|if|else|while|else|endif|while|end|endwhile|loop|endloop|local|then|startmacro|endmacro|do|FORALL|break|continue|enddo)(\\w+)\\b"
+			},
+
+			{
+				"captures": {
+					"1":{
+						"name":"storage.type.function.xm-macro"
+					},
+					"2":{
+						"name":"entity.name.function.declaration.xm-macro"
+					}
+				},
+				"name":"variable.other.write.xm-macro",
+				"match": "(procedure) (\\w+)"
+			}
+		]
+		}
+	},
+	"scopeName": "source.xmidas"
+}

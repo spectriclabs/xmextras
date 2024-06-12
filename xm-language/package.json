@@ -1,0 +1,26 @@
+{
+  "name": "mcr",
+  "displayName": "xmidas",
+  "description": "Language support for xmidas macro language",
+  "publisher": "Spectric Labs",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "xm-macro",
+      "aliases": ["xmidas", "xm-macro"],
+      "extensions": [".mcr",".mm"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "xm-macro",
+      "scopeName": "source.xmidas",
+      "path": "./syntaxes/xm-macro.tmLanguage.json"
+    }]
+  }
+}
