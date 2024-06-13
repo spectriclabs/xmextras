@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from pathlib import Path
 
 import re
@@ -5,12 +6,42 @@ import sys
 
 
 class Plugin:
-    pass
+    def __str__(self):
+        return f'{self.id} = {self.message}'  # pylint: disable=no-member
+
+
+class FixmePlugin(Plugin):
+    def __init__(self):
+        self.id = 'fixme'
+        self.message = 'TODO, FIXME, or XXX comment detected'
+        self.pat = re.compile(r'![ \t\-]+(TODO|FIXME|XXX)')
+
+    def check(self, line):
+        return self.pat.search(line)
+
+
+class LineTooLongPlugin(Plugin):
+    def __init__(self, limit=200):
+        self.id = 'line-too-long'
+        self.limit = limit
+        self.message = f'Line greater than {limit} characters long'
+
+    def check(self, line):
+        return len(line) > self.limit
+
+
+class TabCharPlugin(Plugin):
+    def __init__(self):
+        self.id = 'tab-char'
+        self.message = 'Tab character detected'
+
+    def check(self, line):
+        return '\t' in line
 
 
 class TrailingWhitespacePlugin(Plugin):
     def __init__(self):
-        self.id = 'TrailingWhitespace'
+        self.id = 'trailing-whitespace'
         self.message = 'Trailing whitespace detected'
         self.pat = re.compile(r'[ \t]+$')
 
@@ -18,29 +49,11 @@ class TrailingWhitespacePlugin(Plugin):
         return self.pat.search(line)
 
 
-class FixmePlugin(Plugin):
-    def __init__(self):
-        self.id = 'Fixme'
-        self.message = 'TODO, FIXME, or XXX comment detected'
-        self.pat = re.compile(r'![ \t\-]+ (TODO|FIXME|XXX)')
-
-    def check(self, line):
-        return self.pat.search(line)
-
-
-class TabCharPlugin(Plugin):
-    def __init__(self):
-        self.id = 'TabChar'
-        self.message = 'Tab character detected'
-
-    def check(self, line):
-        return '\t' in line
-
-
 PLUGINS = [
-    TrailingWhitespacePlugin(),
     FixmePlugin(),
+    LineTooLongPlugin(),
     TabCharPlugin(),
+    TrailingWhitespacePlugin(),
 ]
 
 
@@ -64,15 +77,7 @@ class Issue:
         return f'{self.path}: {self.line_number}: {self.plugin.message} ({self.plugin.id})'
 
 
-def check_file(path: Path, disable=None):
-    if disable is None:
-        disable = []
-
-    if not isinstance(disable, list):
-        raise ValueError("Expected list of disabled plugin ID's or None")
-
-    plugins = [plugin for plugin in PLUGINS if plugin.id not in disable]
-
+def check_file(path: Path, plugins):
     with path.open('r', encoding='utf8') as f:
         for line_num, line in enumerate(f):
             line_issues = check_line(line, plugins)
@@ -81,16 +86,49 @@ def check_file(path: Path, disable=None):
                 yield Issue(path, line_num+1, issue)
 
 
-def mcrlint():
-    paths = [Path(p) for p in sys.argv[1:]]
-    issue_count = 0
+def all_paths_exist(paths):
+    num_missing = 0
 
     for path in paths:
         if not path.exists():
             print(f'Could not find {path}')
-            continue
+            num_missing += 1
 
-        for issue in check_file(path):
+    return num_missing == 0
+
+
+def get_active_plugins(disable):
+    disabled_plugins = [p.lower() for p in disable.split(',')]
+    return [p for p in PLUGINS if p.id not in disabled_plugins]
+
+
+def mcrlint():
+    parser = ArgumentParser(description='Linter for X-Midas macro code')
+    parser.add_argument('-d', '--disable', default='', help='Comma-separated list of check plugins to disable')
+    parser.add_argument('--list', action='store_true', help='List check plugins')
+    parser.add_argument('filenames', nargs='*')
+    args = parser.parse_args()
+
+    if args.list:
+        for plugin in PLUGINS:
+            print(str(plugin))
+        sys.exit(0)
+
+    paths = [Path(p) for p in args.filenames]
+
+    if len(paths) == 0:
+        print('No paths specified')
+        sys.exit(1)
+
+    plugins = get_active_plugins(args.disable)
+
+    if not all_paths_exist(paths):
+        sys.exit(1)
+
+    issue_count = 0
+
+    for path in paths:
+        for issue in check_file(path, plugins):
             print(issue)
             issue_count += 1
 
