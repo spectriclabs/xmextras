@@ -7,7 +7,7 @@ Extra helper functionality for X-Midas.
 Wraps an `XMSession` in with a context manager to ensure it gets ended correctly when exiting.
 
 ```python
-import xmextas as xmx
+import xmextras as xmx
 
 with xmx.XMSessionContext() as session:
     session.xm('res answer 42')
@@ -24,7 +24,7 @@ with xmx.XMSessionContext() as session:
 Returns a dictionary of information about the X-Midas instance, which can be useful for tagging metrics and benchmarks for comparison.
 
 ```python
-import xmextas as xmx
+import xmextras as xmx
 
 with xmx.XMSessionContext() as session:
     info = xmx.info(session)  # also works with a normal XMSession instance
@@ -58,3 +58,7 @@ xmextras locates the system installation of bluefile.py so it can be imported ou
 from xmextras import bluefile
 header = bluefile.readheader('some_bluefile.tmp')
 ```
+
+## mcrlint
+
+The `mcrlint` command is also included as part of xmextras.  It can be used for linting X-Midas macro code.  Use `mcrlint --help` for more information.
