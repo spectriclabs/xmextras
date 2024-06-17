@@ -11,16 +11,29 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "xm-macro",
-      "aliases": ["xmidas", "xm-macro"],
-      "extensions": [".mcr",".mm"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "xm-macro",
-      "scopeName": "source.xmidas",
-      "path": "./syntaxes/xm-macro.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "xm-macro",
+        "aliases": [
+          "xmidas",
+          "xm-macro"
+        ],
+        "extensions": [
+          ".mcr",
+          ".mm"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "xm-macro",
+        "scopeName": "source.xmidas",
+        "path": "./syntaxes/xm-macro.tmLanguage.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.27.0"
   }
 }
