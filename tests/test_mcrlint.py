@@ -11,9 +11,10 @@ def test_check_line(tmp_path):
         out.write('  do_thing  ! TODO: make do thing\n')
         out.write('\tdo_other_thing\n')
         out.write('  sloppy  ! FIXME   \n')
+        out.write('  ^unbound foo\n')
 
     issues = list(xmextras.mcrlint.check_file(bad_macro_path, xmextras.mcrlint.get_active_plugins('')))
-    assert len(issues) == 6
+    assert len(issues) == 7
 
     issues = list(xmextras.mcrlint.check_file(bad_macro_path, xmextras.mcrlint.get_active_plugins('fixme')))
-    assert len(issues) == 4
+    assert len(issues) == 5

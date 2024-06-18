@@ -30,6 +30,15 @@ class LineTooLongPlugin(Plugin):
         return len(line) > self.limit
 
 
+class RuntimeCommandBinding(Plugin):
+    def __init__(self):
+        self.id = 'runtime-command-binding'
+        self.message = 'Runtime command binding caret detected'
+
+    def check(self, line):
+        return line.strip().startswith('^')
+
+
 class TabCharPlugin(Plugin):
     def __init__(self):
         self.id = 'tab-char'
@@ -52,6 +61,7 @@ class TrailingWhitespacePlugin(Plugin):
 PLUGINS = [
     FixmePlugin(),
     LineTooLongPlugin(),
+    RuntimeCommandBinding(),
     TabCharPlugin(),
     TrailingWhitespacePlugin(),
 ]
