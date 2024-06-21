@@ -16,11 +16,14 @@ import {
 	TextDocumentSyncKind,
 	InitializeResult
 } from 'vscode-languageserver/node';
-import {XmidasSettings} from "./settings"
+import { stat, Stats,readFileSync } from 'node:fs';
+
+import {XmidasSettings,defaultSettings} from "./settings"
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 import {check_file} from "./linter/mcr"
+import { rejects } from 'node:assert';
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
@@ -47,6 +50,7 @@ let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
+	connection.window.showInformationMessage("Xmidas Language Server Started")
 	const capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?
@@ -103,7 +107,6 @@ connection.onInitialized(() => {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: XmidasSettings = { maxNumberOfProblems: 1000 };
 let globalSettings: XmidasSettings = defaultSettings;
 
 // Cache the settings of all open documents
@@ -116,7 +119,7 @@ connection.onDidChangeConfiguration(change => {
 		documentSettings.clear();
 	} else {
 		globalSettings = <XmidasSettings>(
-			(change.settings.languageServerExample || defaultSettings)
+			(change.settings.xmidasLanguageServer || defaultSettings)
 		);
 	}
 
@@ -134,28 +137,57 @@ function getDocumentSettings(resource: string): Thenable<XmidasSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'languageServerExample'
+			section:"xmidasLanguageServer"
 		});
 		documentSettings.set(resource, result);
 	}
 	return result;
 }
-connection.onDefinition
+const asyncStat = async (filePath:string):Promise<Stats>=>{
+	return new Promise((resolve,reject)=> stat(filePath,(err,stats)=>{
+		if(err){
+			reject(err)
+			return 
+		}
+		resolve(stats)
+	}))
+}
 connection.onHover(async (params,...rest)=>{
 
 	const {textDocument,position} = params
 	let document = documents.get(textDocument.uri)
 	if(document){
-		let text = document.getText({start:{line:position.line,character:position.character},end:{line:position.line,character:position.character+10}})//Todo get pull full token
-		console.log(text)
-		position.character
-	}
-	return {
-		contents:{
-			kind:"plaintext",
-			value:"Display explain here"
+		let line = document.getText({start:{line:position.line,character:0},end:{line:position.line+1,character:0}})
+		let text = document.getText({start:position,end:{line:position.line,character:position.character+20}})
+		let startIndex = line.indexOf(text);
+		let tokenStart = line.lastIndexOf(" ",startIndex)+1;
+		let tokenEnd = line.indexOf(" ",tokenStart)
+		let token = line.substring(tokenStart,tokenEnd)
+		console.debug(`Looking for explain for ${token}`)
+		//TODO What is the correct order of SYS path. Can we do this dynamically? do we need to start an xmshell to do this?
+		//for now just look at the extention setting configuration and use that order
+		const settings = await getDocumentSettings(textDocument.uri);
+		//Look in reverse order so we check option trees first
+		for( let path of [...settings.xmDiskPaths].reverse()){
+			const explainFile = `${path}/exp/${token}.exp`
+			try {
+			const stats = await asyncStat(explainFile)
+
+			if(stats.isFile()){
+				const contents = readFileSync(explainFile)
+				return {
+					contents:{
+						kind:"plaintext",
+						value:contents.toString()
+					}
+				}
+			}
+			} catch (error:any) {
+				console.log(error.message)
+			}
 		}
 	}
+	return undefined
 })
 // Only keep settings for open documents
 documents.onDidClose(e => {
@@ -173,21 +205,24 @@ documents.onDidChangeContent(change => {
 });
 
 async function runLintOnDocument(textDocument: TextDocument): Promise<void> {
-	console.log("runLintOnDocument")
+	console.log("start lint")
 	
 	// In this simple example we get the settings for every validate run.
 	const settings = await getDocumentSettings(textDocument.uri);
-	
+	console.log("settings")
+	console.log(JSON.stringify(settings))
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
 	const lines = text.split("\n")
 	
-	
+	console.log("start lint")
 	const diagnostics:Diagnostic[] = check_file(text,textDocument,settings)
+	console.log("stop lint")
 
 
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	console.log("lint complete")
 }
 
 connection.onDidChangeWatchedFiles(_change => {

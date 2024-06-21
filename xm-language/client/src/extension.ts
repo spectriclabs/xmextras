@@ -48,7 +48,7 @@ export async function activate(context: ExtensionContext) {
 	// Create the language client and start the client.
 	client = new LanguageClient(
 		'xmidasLanguageServer',
-		'XmidasLanguageServer',
+		'Xmidas Language',
 		serverOptions,
 		clientOptions
 	);

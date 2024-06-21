@@ -33,7 +33,7 @@ class FixmePlugin extends Plugin {
     check(file: string)  {
         let errors:LintError[] = []
         let m: RegExpExecArray | null;
-        let pat = /(TODO|FIXME|XXX)/i;
+        let pat = /(TODO|FIXME|XXX)/ig;
         while((m = pat.exec(file))){
             errors.push({index:m.index,value:m[0]})
         }
@@ -126,8 +126,14 @@ class Issue {
     }
 }
 export function check_file(text:string,textDocument:TextDocument,settings:XmidasSettings){
+    const disabledLintPlugins = settings.disabledLintPlugins.split(",")
     const results: Diagnostic[] = [];
     for(let plugin of PLUGINS){
+        if(disabledLintPlugins.includes(plugin.id)){
+            console.log(`${plugin.id} is disabled`)
+            continue
+        }
+        console.log(`starting ${plugin.id}`)
         if(results.length > settings.maxNumberOfProblems){
             break
         }
