@@ -209,6 +209,57 @@ const asyncStat = async (filePath: string): Promise<Stats> => {
 		resolve(stats)
 	}))
 }
+
+var levDist = function(s:string, t:string) {
+    var d:number[][] = []; //2d matrix
+
+    // Step 1
+    var n = s.length;
+    var m = t.length;
+
+    if (n == 0) return m;
+    if (m == 0) return n;
+
+    //Create an array of arrays in javascript (a descending loop is quicker)
+    for (var i = n; i >= 0; i--) d[i] = [];
+
+    // Step 2
+    for (var i = n; i >= 0; i--) d[i][0] = i;
+    for (var j = m; j >= 0; j--) d[0][j] = j;
+
+    // Step 3
+    for (var i = 1; i <= n; i++) {
+        var s_i = s.charAt(i - 1);
+
+        // Step 4
+        for (var j = 1; j <= m; j++) {
+
+            //Check the jagged ld total so far
+            if (i == j && d[i][j] > 4) return n;
+
+            var t_j = t.charAt(j - 1);
+            var cost = (s_i == t_j) ? 0 : 1; // Step 5
+
+            //Calculate the minimum
+            var mi = d[i - 1][j] + 1;
+            var b = d[i][j - 1] + 1;
+            var c = d[i - 1][j - 1] + cost;
+
+            if (b < mi) mi = b;
+            if (c < mi) mi = c;
+
+            d[i][j] = mi; // Step 6
+
+            //Damerau transposition
+            if (i > 1 && j > 1 && s_i == t.charAt(j - 2) && s.charAt(i - 2) == t_j) {
+                d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
+            }
+        }
+    }
+
+    // Step 7
+    return d[n][m];
+}
 connection.onHover(async (params, ...rest) => {
 	const token = getTokenFromText(params)
 	const { textDocument } = params
@@ -220,23 +271,36 @@ connection.onHover(async (params, ...rest) => {
 		for (let path of [...settings.xmDiskPaths].reverse()) {
 			const explainFile = `${path}/exp/${token.toLowerCase()}.exp`
 			try {
-				const stats = await asyncStat(explainFile)
 				let commands = await parseOptIonTreeCommandsFile(path);
-				commands = commands.filter(command => token.toLowerCase().startsWith(command.shortName.toLowerCase()) || command.name.toLowerCase().startsWith(token.toLowerCase()))
+				commands = commands.filter(command => {
+					if(token.length > command.name.length){
+						return false
+					}
+					if(token.length< command.shortName.length){
+						return false
+					}
+					return token.toLowerCase().startsWith(command.shortName.toLowerCase()) || command.name.toLowerCase().startsWith(token.toLowerCase())
+				})
 				var hover: string = ""
 				if (commands.length) {
+					console.log(token)
+					console.log(commands)
+					commands = commands.sort((a,b)=>levDist(a.name.toLowerCase(),token)-levDist(b.name.toLowerCase(),token))
 					let command = commands[0];
 					let typedef = `${command.name.toLowerCase()} ${command.params.map(param => {
 						const [typeName,type] = Object.entries(XMParamType).filter(e=> e[1] === param.type)[0]
 						return `${typeName}:${type}=${param.default}`
 					}).join(",")}`
 					hover += "```xmidas\n" + typedef + "\n\n```\n\n"
+					const explainFile = `${path}/exp/${command.name.toLowerCase()}.exp`
+					const stats = await asyncStat(explainFile)
+					if (stats.isFile()) {
+						hover += "______________________________\n";
+						const explain = readFileSync(explainFile);
+						hover += explain.toString()
+					}
 				}
-				if (stats.isFile()) {
-					hover += "______________________________\n";
-					const explain = readFileSync(explainFile);
-					hover += explain.toString()
-				}
+
 				if (hover !== "") {
 					return {
 						contents: {
@@ -360,6 +424,7 @@ async function parseOptIonTreeCommandsFile(path: string): Promise<XMCommand[]> {
 		if (stats.isFile()) {
 			const contents = readFileSync(commandsFile)
 			let commands = parseCommands(contents.toString())
+			commands = commands.sort((a,b)=>a.shortName.length - b.shortName.length)
 			COMMAND_CACHE.set(path, commands)
 			return commands
 		}
