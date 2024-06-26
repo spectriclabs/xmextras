@@ -1,24 +1,34 @@
 {
-  "name": "mcr",
-  "displayName": "xmidas",
+  "name": "xmidas-language",
+  "displayName": "Xmidas",
   "description": "Language support for xmidas macro language",
-  "publisher": "Spectric Labs",
-  "version": "0.0.1",
+  "publisher": "spectric-labs",
+  "version": "0.0.3",
   "engines": {
-    "vscode": "^1.89.0"
+    "vscode": "^1.75.0"
   },
+  "main": "client/out/extension.js",
   "categories": [
     "Programming Languages"
+  ],
+  "repository": {
+		"type": "git",
+		"url": "https://github.com/spectriclabs/xmextras"
+	},
+  "activationEvents": [
+    "onLanguage:xmidas",
+    "onLanguage:xm-macro"
   ],
   "contributes": {
     "languages": [
       {
-        "id": "xm-macro",
+        "id": "xmidas",
         "aliases": [
           "xmidas",
           "xm-macro"
         ],
         "extensions": [
+          ".txt",
           ".mcr",
           ".mm"
         ],
@@ -27,13 +37,65 @@
     ],
     "grammars": [
       {
-        "language": "xm-macro",
+        "language": "xmidas",
         "scopeName": "source.xmidas",
         "path": "./syntaxes/xm-macro.tmLanguage.json"
       }
-    ]
-  },
+    ],"configuration": {
+			"type": "object",
+			"title": "Xmidas Settings",
+			"properties": {
+				"xmidasLanguageServer.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+        "xmidasLanguageServer.disabledLintPlugins": {
+					"scope": "resource",
+					"type": "string",
+					"default": "",
+					"description": "Comma seperated list of rules to disable"
+				},
+        "xmidasLanguageServer.xmDiskPaths": {
+
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "default": ["/opt/xmidas/xm-5_4_x/xm", "/opt/xmidas/xm-5_4_x/xmopts"],
+            "description": "List of XMDisk and option tree paths"
+
+				},
+				"xmidasLanguageServer.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		}
+  },	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"test": "sh ./scripts/e2e.sh"
+	},
   "devDependencies": {
-    "@vscode/vsce": "^2.27.0"
+    "@vscode/vsce": "^2.27.0",
+    "@types/mocha": "^9.1.0",
+		"@types/node": "^16.11.7",
+		"@typescript-eslint/eslint-plugin": "^5.42.0",
+		"@typescript-eslint/parser": "^5.42.0",
+		"eslint": "^8.26.0",
+		"mocha": "^9.2.1",
+		"typescript": "^4.8.4"
   }
 }
