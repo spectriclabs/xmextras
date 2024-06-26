@@ -297,7 +297,7 @@ connection.onHover(async (params, ...rest) => {
 					if (stats.isFile()) {
 						hover += "______________________________\n";
 						const explain = readFileSync(explainFile);
-						hover += explain.toString()
+						hover += "\n\n```plaintext\n" +explain.toString();
 					}
 				}
 
