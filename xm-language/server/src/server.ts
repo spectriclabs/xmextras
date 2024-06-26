@@ -377,6 +377,7 @@ enum XMParamType {
 	RESULT = "R",
 	TABLE = "T",
 	UNSTRANSLATED = "U", //Untranslated ascii string (could be a aux path or device)
+	HASH = "H",
 	COLLECTION = "C",//List or array
 	KEYVALUE = "K", //key value list (like extended header)
 	DOUBLE = "D",
@@ -386,7 +387,7 @@ enum XMParamType {
 	INT = "I", //short int
 	BYTE = "B",
 	OFFSET = "O",//Binary offset
-	WILD = "_" //xmidas attempts to parse as a double if it cannot it is cast to unstranslated (ascii)
+	ANY = "_" //xmidas attempts to parse as a double if it cannot it is cast to unstranslated (ascii)
 }
 interface XMCommandParam {
 	type: XMParamType;
@@ -409,6 +410,7 @@ interface XMCommand {
 	name: string;
 	shortName: string;
 	numParams: number;
+	paramsRepeatable:boolean;
 	supportType: XMCommandSupport;
 	params: XMCommandParam[]
 }
@@ -437,9 +439,9 @@ function parseCommands(text: string) {
 	const commands: XMCommand[] = []
 	// @ts-ignore
 	text = text.replaceAll(/&\n\s+/g, "");//Replace continue on next line characters it breaks the following regex pattern
-	const pattern = /(\d+)\s+(\w+)\*(\w+)?\s+(\w),(\d+)\s+(.+)+#(.+)/g
+	const pattern = /(\d+)\s+(\w+)\*(\w+)?\s+(\w),(\d+)(\+?)\s+(.+)+#(.+)/g
 	for (let match of text.matchAll(pattern)) {
-		let [category, shortName, additionalName, commandType, matchedParams, paramDefaults, paramTypes] = match.splice(1);
+		let [category, shortName, additionalName, commandType, matchedParams,repeated, paramDefaults, paramTypes] = match.splice(1);
 		let numParams = parseInt(matchedParams)
 		let supportType = commandType as XMCommandSupport;
 		let command: XMCommand = {
@@ -448,6 +450,7 @@ function parseCommands(text: string) {
 			name: additionalName ? shortName + additionalName : shortName,
 			supportType,
 			numParams,
+			paramsRepeatable:repeated === "+",
 			params: []
 		}
 		let defaults = paramDefaults.split(",");
