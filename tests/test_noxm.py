@@ -19,5 +19,7 @@ def test_power2():
     assert xmextras.noxm.power2(0) == 1
     assert xmextras.noxm.power2(1) == 1
     assert xmextras.noxm.power2(2) == 2
+    assert xmextras.noxm.power2(2.5) == 4
     assert xmextras.noxm.power2(3) == 4
+    assert xmextras.noxm.power2(3.5) == 4
     assert xmextras.noxm.power2(65537) == 131072

@@ -3,6 +3,7 @@ Functionality that does not require X-Midas.
 '''
 
 from datetime import datetime
+from math import frexp, ldexp
 
 J1950_DELTA = 631152000.0
 
@@ -36,7 +37,8 @@ def power2(x):
     Returns the next power of two greater than
     or equal to x.
     '''
-    if x < 1:
+    if x <= 1:
         return 1
 
-    return 1 << (x-1).bit_length()
+    fraction, exponent = frexp(x)
+    return int(ldexp(1, exponent - (fraction == 0.5)))
