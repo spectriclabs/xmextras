@@ -5,6 +5,7 @@ from .noxm import (
     epoch_to_j1950,
     j1950_to_datetime,
     j1950_to_epoch,
+    power2,
 )
 
 try:

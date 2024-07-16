@@ -30,3 +30,13 @@ def datetime_to_j1950(dt):
     Returns the J1950 time from a datetime object.
     '''
     return epoch_to_j1950(dt.timestamp())
+
+def power2(x):
+    '''
+    Returns the next power of two greater than
+    or equal to x.
+    '''
+    if x < 1:
+        return 1
+
+    return 1 << (x-1).bit_length()

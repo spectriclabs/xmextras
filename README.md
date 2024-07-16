@@ -50,6 +50,14 @@ e = j1950_to_epoch(2191001400.0)
 j = epoch_to_to_j1950(1559849400.0)
 ```
 
+## power2
+
+Calculates the next power of two greater than or equal to x.
+
+```python
+power2(3)  # returns 4
+```
+
 ## bluefile
 
 xmextras locates the system installation of bluefile.py so it can be imported outside of an X-Midas environment.
