@@ -1,48 +1,49 @@
 {
-  "name": "xmidas-language",
-  "displayName": "Xmidas",
-  "description": "Language support for xmidas macro language",
-  "publisher": "spectric-labs",
-  "icon": "./xmidas-128.png",
-  "version": "0.0.3",
-  "engines": {
-    "vscode": "^1.75.0"
-  },
-  "main": "client/out/extension.js",
-  "categories": [
-    "Programming Languages"
-  ],
-  "repository": {
+	"name": "xmidas-language",
+	"displayName": "Xmidas",
+	"description": "Language support for xmidas macro language",
+	"publisher": "SpectricLabs",
+	"icon": "./xmidas-128.png",
+	"version": "0.0.3",
+	"engines": {
+		"vscode": "^1.75.0"
+	},
+	"main": "client/out/extension.js",
+	"categories": [
+		"Programming Languages"
+	],
+	"repository": {
 		"type": "git",
 		"url": "https://github.com/spectriclabs/xmextras"
 	},
-  "activationEvents": [
-    "onLanguage:xmidas",
-    "onLanguage:xm-macro"
-  ],
-  "contributes": {
-    "languages": [
-      {
-        "id": "xmidas",
-        "aliases": [
-          "xmidas",
-          "xm-macro"
-        ],
-        "extensions": [
-          ".txt",
-          ".mcr",
-          ".mm"
-        ],
-        "configuration": "./language-configuration.json"
-      }
-    ],
-    "grammars": [
-      {
-        "language": "xmidas",
-        "scopeName": "source.xmidas",
-        "path": "./syntaxes/xm-macro.tmLanguage.json"
-      }
-    ],"configuration": {
+	"activationEvents": [
+		"onLanguage:xmidas",
+		"onLanguage:xm-macro"
+	],
+	"contributes": {
+		"languages": [
+			{
+				"id": "xmidas",
+				"aliases": [
+					"xmidas",
+					"xm-macro"
+				],
+				"extensions": [
+					".txt",
+					".mcr",
+					".mm"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "xmidas",
+				"scopeName": "source.xmidas",
+				"path": "./syntaxes/xm-macro.tmLanguage.json"
+			}
+		],
+		"configuration": {
 			"type": "object",
 			"title": "Xmidas Settings",
 			"properties": {
@@ -52,21 +53,22 @@
 					"default": 100,
 					"description": "Controls the maximum number of problems produced by the server."
 				},
-        "xmidasLanguageServer.disabledLintPlugins": {
+				"xmidasLanguageServer.disabledLintPlugins": {
 					"scope": "resource",
 					"type": "string",
 					"default": "",
 					"description": "Comma seperated list of rules to disable"
 				},
-        "xmidasLanguageServer.xmDiskPaths": {
-
-            "type": "array",
-            "items": {
-                "type": "string"
-            },
-            "default": ["/opt/xmidas/xm-5_4_x/xm", "/opt/xmidas/xm-5_4_x/xmopts"],
-            "description": "List of XMDisk and option tree paths"
-
+				"xmidasLanguageServer.xmDiskPaths": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [
+						"/opt/xmidas/xm-5_4_x/xm",
+						"/opt/xmidas/xm-5_4_x/xmopts"
+					],
+					"description": "List of XMDisk and option tree paths"
 				},
 				"xmidasLanguageServer.trace.server": {
 					"scope": "window",
@@ -81,7 +83,8 @@
 				}
 			}
 		}
-  },	"scripts": {
+	},
+	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
@@ -89,14 +92,28 @@
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh"
 	},
-  "devDependencies": {
-    "@vscode/vsce": "^2.27.0",
-    "@types/mocha": "^9.1.0",
+	"devDependencies": {
+		"@vscode/vsce": "^2.27.0",
+		"@types/mocha": "^9.1.0",
 		"@types/node": "^16.11.7",
 		"@typescript-eslint/eslint-plugin": "^5.42.0",
 		"@typescript-eslint/parser": "^5.42.0",
 		"eslint": "^8.26.0",
 		"mocha": "^9.2.1",
 		"typescript": "^4.8.4"
-  }
+	},
+	"__metadata": {
+		"isApplicationScoped": false,
+		"installedTimestamp": 1721400109201,
+		"pinned": false,
+		"source": "gallery",
+		"id": "155d2612-06e4-4b66-8238-910f5029ac75",
+		"publisherId": "bbe195f7-6cea-44ca-8b9b-c0d817c45647",
+		"publisherDisplayName": "Spectric Labs",
+		"targetPlatform": "undefined",
+		"updated": true,
+		"isPreReleaseVersion": false,
+		"hasPreReleaseVersion": false,
+		"preRelease": false
+	}
 }
