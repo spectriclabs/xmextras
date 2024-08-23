@@ -34,6 +34,10 @@ if 'XMDISK' in os.environ:
 
                     answer = session.xmpy.res['answer']
             '''
+            # Save environment variables that tend
+            # to get clobbered by XMSession.
+            saved_env_vars = {k: v for k, v in os.environ.items() if k.startswith('XM')}
+
             session = XMSession()
             session.start()
 
@@ -41,6 +45,11 @@ if 'XMDISK' in os.environ:
                 yield session
             finally:
                 session.end()
+
+                # Restore environment variables to their
+                # state from before the XMSession.
+                for k, v in saved_env_vars.items():
+                    os.environ[k] = v
 
         def info(session):
             '''
