@@ -46,10 +46,12 @@ if 'XMDISK' in os.environ:
             finally:
                 session.end()
 
-                # Restore environment variables to their
-                # state from before the XMSession.
+                # Restore environment variables that were
+                # deleted during the XMSession.  Leave
+                # modified environment variables alone.
                 for k, v in saved_env_vars.items():
-                    os.environ[k] = v
+                    if k not in os.environ:
+                        os.environ[k] = v
 
         def info(session):
             '''
