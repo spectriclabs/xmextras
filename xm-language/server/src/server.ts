@@ -15,9 +15,10 @@ import {
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult,
-	CompletionList
+	CompletionList,
+	Definition
 } from 'vscode-languageserver/node';
-
+import { globSync } from 'glob';
 import { stat, Stats, readFileSync, readdirSync } from 'node:fs';
 import { join as pathJoin } from "path";
 import { XmidasSettings, defaultSettings } from "./settings"
@@ -25,6 +26,7 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 import { check_file } from "./linter/mcr"
+import { start } from 'node:repl';
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
@@ -88,7 +90,8 @@ connection.onInitialize((params: InitializeParams) => {
 			// Tell the client that this server supports code completion.
 			completionProvider: {
 				resolveProvider: true
-			}
+			},
+			definitionProvider:true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -142,7 +145,7 @@ connection.onDidChangeConfiguration(change => {
 });
 
 async function getDocumentSettings(resource: string): Promise<XmidasSettings> {
-	console.log("getDocumentSettings")
+	console.log("getDocumentSettings Updated")
 
 	if (!hasConfigurationCapability) {
 		return Promise.resolve(globalSettings);
@@ -156,7 +159,6 @@ async function getDocumentSettings(resource: string): Promise<XmidasSettings> {
 		documentSettings.set(resource, result);
 	}
 	const settings = await result
-	console.log(settings)
 	//Lets resolve disk paths to an option tree this allows users to set a directory of many optiontrees or a single option tree.
 	//We look for a manifest and if the folder contains one we assume it is a full option tree path, otherwise we look one folder deeper for a manifest
 	const resolvedPaths: string[] = []
@@ -261,56 +263,43 @@ var levDist = function(s:string, t:string) {
     return d[n][m];
 }
 connection.onHover(async (params, ...rest) => {
+	var commands = await getCommandsFromText(params)
 	const token = getTokenFromText(params)
-	const { textDocument } = params
-	if (token) {
-		//TODO What is the correct order of SYS path. Can we do this dynamically? do we need to start an xmshell to do this?
-		//for now just look at the extention setting configuration and use that order
-		const settings = await getDocumentSettings(textDocument.uri);
-		//Look in reverse order so we check option trees first
-		for (let path of [...settings.xmDiskPaths].reverse()) {
-			const explainFile = `${path}/exp/${token.toLowerCase()}.exp`
-			try {
-				let commands = await parseOptIonTreeCommandsFile(path);
-				commands = commands.filter(command => {
-					if(token.length > command.name.length){
-						return false
-					}
-					if(token.length< command.shortName.length){
-						return false
-					}
-					return token.toLowerCase().startsWith(command.shortName.toLowerCase()) || command.name.toLowerCase().startsWith(token.toLowerCase())
-				})
-				var hover: string = ""
-				if (commands.length) {
-					console.log(token)
-					console.log(commands)
-					commands = commands.sort((a,b)=>levDist(a.name.toLowerCase(),token)-levDist(b.name.toLowerCase(),token))
-					let command = commands[0];
-					let typedef = `${command.name.toLowerCase()} ${command.params.map(param => {
-						const [typeName,type] = Object.entries(XMParamType).filter(e=> e[1] === param.type)[0]
-						return `${typeName}:${type}=${param.default}`
-					}).join(",")}`
-					hover += "```xmidas\n" + typedef + "\n\n```\n\n"
-					const explainFile = `${path}/exp/${command.name.toLowerCase()}.exp`
-					const stats = await asyncStat(explainFile)
-					if (stats.isFile()) {
-						hover += "______________________________\n";
-						const explain = readFileSync(explainFile);
-						hover += "\n\n```plaintext\n" +explain.toString();
-					}
-				}
+	if(!token){
+		return
+	}
+	//filter out commands where the token is shorter than the shortname
+	commands = commands.filter(command=>{
+		if(token.length > command.name.length){
+			return false
+		}
+		if(token.length < command.shortName.length){
+			return false
+		}
+		return true
+	})
 
-				if (hover !== "") {
-					return {
-						contents: {
-							kind: "markdown",
-							value: hover
-						}
-					}
-				}
-			} catch (error: any) {
-				console.log(error.message)
+	var hover: string = ""
+	if (commands.length) {
+		let command = commands[0];
+		let typedef = `${command.name.toLowerCase()} ${command.params.map(param => {
+			const [typeName,type] = Object.entries(XMParamType).filter(e=> e[1] === param.type)[0]
+			return `${typeName}:${type}=${param.default}`
+		}).join(",")}`
+		hover += "```xmidas\n" + typedef + "\n\n```\n\n"
+		const explainFile = `${command.path}/exp/${command.name.toLowerCase()}.exp`
+		const stats = await asyncStat(explainFile)
+		if (stats.isFile()) {
+			hover += "______________________________\n";
+			const explain = readFileSync(explainFile);
+			hover += "\n\n```plaintext\n" +explain.toString();
+		}
+	}
+	if (hover !== "") {
+		return {
+			contents: {
+				kind: "markdown",
+				value: hover
 			}
 		}
 	}
@@ -333,7 +322,11 @@ function getTokenFromText(params: TextDocumentPositionParams) {
 		let tokenStart = line.lastIndexOf(" ", startIndex) + 1;
 		let tokenEnd = line.indexOf(" ", tokenStart)
 		if (tokenEnd == -1) {
-			tokenEnd = position.character
+			//check if we are typing a new command on an existing line
+			tokenEnd = line.indexOf("\n",tokenStart)
+			if(tokenEnd == -1){
+				tokenEnd = position.character
+			}
 		}
 		let token = line.substring(tokenStart, tokenEnd)
 		//Remove switches
@@ -405,6 +398,14 @@ enum XMCommandSupport {
 	FOREIGN = "F",
 	OSCOMMAND = "O"
 }
+
+var SUPPORT_TYPE_TO_FOLDER:Record<string,string> = {
+	[XMCommandSupport.HOST]:"/host/",
+	[XMCommandSupport.MACRO]:"/mcr/",
+	[XMCommandSupport.PYMACRO]:"/mcr/",
+	[XMCommandSupport.INTRINSIC]:"/lib/xmintrinsics/"
+}
+
 interface XMCommand {
 	category: number;
 	name: string;
@@ -413,19 +414,22 @@ interface XMCommand {
 	paramsRepeatable:boolean;
 	supportType: XMCommandSupport;
 	params: XMCommandParam[]
+	path:string;
+	location?:string
 }
 const COMMAND_CACHE = new Map()
 async function parseOptIonTreeCommandsFile(path: string): Promise<XMCommand[]> {
+	const commandsFile = `${path}/cfg/commands.cfg`
+	console.log(commandsFile)
 	if (COMMAND_CACHE.has(path)) {
 		return COMMAND_CACHE.get(path)
 	}
-	const commandsFile = `${path}/cfg/commands.cfg`
 	try {
 		const stats = await asyncStat(commandsFile)
 
 		if (stats.isFile()) {
 			const contents = readFileSync(commandsFile)
-			let commands = parseCommands(contents.toString())
+			let commands = parseCommands(contents.toString(),path)
 			commands = commands.sort((a,b)=>a.shortName.length - b.shortName.length)
 			COMMAND_CACHE.set(path, commands)
 			return commands
@@ -435,23 +439,38 @@ async function parseOptIonTreeCommandsFile(path: string): Promise<XMCommand[]> {
 	}
 	return []
 }
-function parseCommands(text: string) {
+function parseCommands(text: string,path:string) {
 	const commands: XMCommand[] = []
 	// @ts-ignore
 	text = text.replaceAll(/&\n\s+/g, "");//Replace continue on next line characters it breaks the following regex pattern
-	const pattern = /(\d+)\s+(\w+)\*(\w+)?\s+(\w),(\d+)(\+?)\s+(.+)+#(.+)/g
+	const pattern = /(\d+)?\s+(\w+)\*(\w+)?\s+(\w),(\d+)(\+?)\s+(.+)+#([IOANRTUHCKDFXLIBO_?\d]+)/g
+	
 	for (let match of text.matchAll(pattern)) {
 		let [category, shortName, additionalName, commandType, matchedParams,repeated, paramDefaults, paramTypes] = match.splice(1);
 		let numParams = parseInt(matchedParams)
 		let supportType = commandType as XMCommandSupport;
+		let name = additionalName ? shortName + additionalName : shortName;
+		let location;
+		if(SUPPORT_TYPE_TO_FOLDER[supportType]){
+			let cname = name.toLowerCase()
+			let supportFolder = SUPPORT_TYPE_TO_FOLDER[supportType]
+			let expectedFolder = `${path}/${supportFolder}/${cname}*`
+			var files = globSync(expectedFolder)
+			files = files.filter(f=>!f.match(/.*(\.exe|\.so|\.mcr|\.b)/))
+			if(files.length == 1){
+				location = files[0]
+			}
+		}
 		let command: XMCommand = {
 			category: parseInt(category),
 			shortName,
-			name: additionalName ? shortName + additionalName : shortName,
+			name,
 			supportType,
 			numParams,
 			paramsRepeatable:repeated === "+",
-			params: []
+			params: [],
+			path,
+			location
 		}
 		let defaults = paramDefaults.split(",");
 		let index = 1
@@ -477,44 +496,70 @@ function parseCommands(text: string) {
 		}
 		commands.push(command)
 	}
+	console.log(`Parsed ${commands.length} from ${path}`)
 	return commands
 }
+
+async function getCommandsFromText(params:TextDocumentPositionParams){
+	let allCommands:Record<string,XMCommand>= {}
+	const token = getTokenFromText(params)
+	const { textDocument } = params
+	const settings = await getDocumentSettings(textDocument.uri);
+	if(!token){
+		return []
+	}
+	//Look in listed order so the llast paths overwrite any commands found in lower paths
+	for (let path of [...settings.xmDiskPaths]) {
+		let commands = await parseOptIonTreeCommandsFile(path);
+		commands = commands.filter(command => {
+			return token.toLowerCase().startsWith(command.shortName.toLowerCase()) || command.name.toLowerCase().startsWith(token.toLowerCase())
+		})
+		commands.forEach(c=>{
+			allCommands[c.name] = c
+		})
+	}
+	//sort the commands by levinstine distance so the one closest to the token is first
+	var commands = Object.values(allCommands)
+	commands = commands.sort((a,b)=>levDist(a.name.toLowerCase(),token)-levDist(b.name.toLowerCase(),token))
+	return commands
+
+}
+connection.onDefinition(async (params,cancel)=>{
+	const commands = await getCommandsFromText(params)
+	console.log("onDefinition")
+	console.log(commands)
+	if(commands.length == 1 && commands[0].location){
+		let definition:Definition ={uri:commands[0].location,range:{start:{line:0,character:0},end:{line:0,character:0}}}
+		return definition
+	}
+})
+
 connection.onCompletion(async (params, cancel) => {
 	console.log("On completion")
 	if (cancel.isCancellationRequested) {
 		return
 	}
-	const token = getTokenFromText(params)
+	const commands = await getCommandsFromText(params)
 	const completions: CompletionList = { isIncomplete: false, items: [] }
-	console.log(token)
-	if (token) {
-		//Look in reverse order so we check option trees first
-		const settings = await getDocumentSettings(params.textDocument.uri);
-		for (let path of [...settings.xmDiskPaths].reverse()) {
-			//Find commands in XM paths
-			let commands = await parseOptIonTreeCommandsFile(path)
-			console.log(commands)
-			commands.forEach(command => {
-				command.name.includes(token)
-				completions.items.push(
-					{
-						label: command.name,
-						kind: CompletionItemKind.Function,
-						insertText: `${command.name.toLowerCase()} ${command.params.map(param => {
-							return param.default
-						}).join(",")}`,
-						detail: command.params.map(param => {
-							return Object.entries(XMParamType).filter(entry => entry[1] === param.type).map(entry => entry[0])
-						}).join(","),
-						documentation: "Show link to explain",
-						data: { path, command }
-					}
-				)
-
-			})
-		}
+	if(!commands.length){
+		return
 	}
-
+	commands.forEach(command => {
+		completions.items.push(
+			{
+				label: command.name,
+				kind: CompletionItemKind.Function,
+				insertText: `${command.name.toLowerCase()} ${command.params.map(param => {
+					return param.default
+				}).join(",")}`,
+				detail: command.params.map(param => {
+					return Object.entries(XMParamType).filter(entry => entry[1] === param.type).map(entry => entry[0])
+				}).join(","),
+				documentation: "Show link to explain",
+				data: { path:command.path, command }
+			}
+		)
+	})
 	return completions
 })
 connection.onDidChangeWatchedFiles(_change => {

@@ -40,3 +40,7 @@ npx vsce publish
 
 https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix
 
+## Orginization Managment
+How to add edit remove plugins from the market place that are associated with spectric
+https://marketplace.visualstudio.com/manage/publishers/spectriclabs
+
