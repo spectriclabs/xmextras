@@ -36,7 +36,12 @@ export async function activate(context: ExtensionContext) {
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
 		// Register the server xmidas
-		documentSelector:[{scheme:"file", language: 'xmidas' }, { language: 'xm-macro', pattern: '**∕*.mcr' }],
+		documentSelector:[
+			{scheme:"file", language: 'xmidas' }, 
+			{ language: 'xm-macro', pattern: '**∕*.mcr' },
+			{ language: "python", scheme: "file" },
+			{ language: "python", scheme: "untitled" }
+		],
 		// synchronize: {
 		// 	//fileEvents:workspace.createFileSystemWatcher(new RelativePattern(window.activeTextEditor.document.uri, '*'))
 		// 	fileEvents:[workspace.createFileSystemWatcher('**​/*.py'),workspace.createFileSystemWatcher('**​/*.mcr')]
