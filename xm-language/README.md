@@ -35,6 +35,7 @@ npx vsce package
 ```
 npx vsce publish
 ```
+*Note* It seems like access to  the PAT is moved. I cant seem to find it, but you can update the extention under Orginization Management -> plugin -> ... ->Update
 
 ## Install
 
